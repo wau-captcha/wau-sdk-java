@@ -11,7 +11,7 @@
 
     <name>WAU Captcha SDK</name>
     <description>Java SDK for WAU Captcha: redeem captcha tokens on your server and fetch or answer challenges.</description>
-    <!-- Maven Central needs a project page and source repository: set them before the first release. -->
+    <!-- Maven Central needs a project page and source repository. -->
     <url>${project.homepage}</url>
 
     <licenses>
@@ -35,14 +35,49 @@
     </scm>
 
     <properties>
-        <project.homepage>https://github.com/REPLACE-WITH-OWNER/wau-sdk-java</project.homepage>
-        <project.repository>https://github.com/REPLACE-WITH-OWNER/wau-sdk-java.git</project.repository>
+        <project.homepage>https://github.com/wau-captcha/wau-sdk-java</project.homepage>
+        <project.repository>https://github.com/wau-captcha/wau-sdk-java.git</project.repository>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
+    <dependencies>
+        <!-- Tests only: the library itself has no dependencies. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.14.4</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
     <build>
+        <!-- Every plugin of the lifecycle at a fixed version, so each build runs the same code. -->
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>3.5.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.5.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -53,6 +88,11 @@
                         <arg>-Xlint:all</arg>
                     </compilerArgs>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.6.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

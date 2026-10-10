@@ -1,5 +1,6 @@
 package com.waucaptcha;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -7,7 +8,7 @@ import java.util.Map;
 
 /**
  * Reads the small JSON replies of WAU Captcha into maps, lists, strings, numbers, booleans and
- * nulls, so the SDK needs no JSON library.
+ * nulls, and writes the strings and numbers of its requests, so the SDK needs no JSON library.
  */
 final class Json {
     private final String text;
@@ -198,5 +199,43 @@ final class Json {
 
     private IllegalArgumentException error(String problem) {
         return new IllegalArgumentException("invalid JSON at " + position + ": " + problem);
+    }
+
+    /** A JSON string literal. */
+    static String string(String value) {
+        StringBuilder quoted = new StringBuilder("\"");
+        for (char character : value.toCharArray()) {
+            switch (character) {
+                case '"' -> quoted.append("\\\"");
+                case '\\' -> quoted.append("\\\\");
+                case '\n' -> quoted.append("\\n");
+                case '\r' -> quoted.append("\\r");
+                case '\t' -> quoted.append("\\t");
+                default -> {
+                    if (character < 0x20) {
+                        quoted.append(String.format("\\u%04x", (int) character));
+                    } else {
+                        quoted.append(character);
+                    }
+                }
+            }
+        }
+        return quoted.append('"').toString();
+    }
+
+    /**
+     * A JSON number in plain notation without trailing zeros, e.g. {@code 280} or {@code 31.2}: as
+     * JavaScript writes the values of an answer, so the answers match the browser SDK's.
+     */
+    static String number(double value) {
+        requireFinite(value, "number");
+        return BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
+    }
+
+    /** JSON has no NaN or infinity, so a value that is not finite is the caller's mistake. */
+    static void requireFinite(double value, String name) {
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(name + " must be a finite number, not " + value);
+        }
     }
 }
