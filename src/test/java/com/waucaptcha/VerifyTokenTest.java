@@ -88,6 +88,21 @@ class VerifyTokenTest {
     }
 
     @Test
+    void aTokenOfAutoCheckMapsToItsConstant() {
+        // A visitor auto_check let through without a puzzle; one who solved its fallback has the fallback's type.
+        service.reply("/siteverify", 200, """
+                {"success":true,"challenge_type":"auto_check","challenge_ts":"2026-10-12T08:15:02Z",
+                 "behavior":{"verdict":"human","score":0.85,"reasons":["no_pointer"]},"hostname":"shop.example.com"}""");
+
+        SiteVerifyResult result = client().verifyToken("token");
+
+        assertTrue(result.success());
+        assertEquals("auto_check", result.challengeType());
+        assertEquals(Optional.of(ChallengeType.AUTO_CHECK), ChallengeType.fromWireName(result.challengeType()));
+        assertEquals(new BehaviorResult(BehaviorVerdict.HUMAN, 0.85, List.of("no_pointer")), result.behavior());
+    }
+
+    @Test
     void aServiceWithoutTheBehaviourCheckOrAnUnknownVerdictReadsAsNotMeasured() {
         service.reply("/siteverify", 200, """
                 {"success":true,"challenge_type":"motion_noise","challenge_ts":"2026-10-08T08:15:02Z"}""");

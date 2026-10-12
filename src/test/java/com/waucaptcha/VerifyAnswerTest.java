@@ -150,7 +150,7 @@ class VerifyAnswerTest {
                 new RotateRound(3, List.of(new RotatePress(812, 1), new RotatePress(1240, 1), new RotatePress(1531, 1)), 2100),
                 new RotateRound(6, List.of(new RotatePress(600, -1), new RotatePress(900, -1)), 1300));
         Challenge challenge = new Challenge(ID, ChallengeType.OBJECT_ROTATE, new byte[] {1}, "image/jpeg", 300, 150,
-                Instant.now().plusSeconds(120), null, new byte[] {2}, SALT, 12, 8);
+                Instant.now().plusSeconds(120), null, new byte[] {2}, SALT, 12, 8, null);
 
         AnswerResult result = client().verifyRotate(challenge, rounds);
 

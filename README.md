@@ -58,6 +58,13 @@ enum), `solvedAt()`, `behavior()` (`verdict()`, `score()`, `reasons()`) and `hos
 JSON body of `POST /siteverify` with `Authorization: Bearer <secret key>`, never in the URL. The base URL must be
 https; plain http is accepted for `localhost`, `127.0.0.1` and `[::1]` only.
 
+`challengeType()` is `"auto_check"` (`ChallengeType.AUTO_CHECK`) when the visitor passed the automatic check without
+being shown a puzzle: the browser SDK judged the browser and the behaviour in it, and a visitor the service was unsure
+of got a challenge of the fallback type instead, whose type `challengeType()` then names. A determined bot driving a
+real browser can pass the automatic check, so for sign-ups, logins and payments require `behavior().score()` at or
+above a threshold of your own, or ask for an interactive type. The check needs a browser: there is no verify call for
+it in Java, and `newChallenge(ChallengeType.AUTO_CHECK, fallbackType)` only serves tests.
+
 Build the client once and share it: it is immutable and thread-safe.
 
 ### Spring Boot
@@ -163,7 +170,9 @@ if (clicked.success()) {
   browser SDK's.
 - `newChallenge()` asks for the type set with `Builder.challengeType`, `IMAGE_DISTORT` by default. SLIDE_PUZZLE and
   ANIMAL_JUMP need a pointer: where keyboard-only users must get through, keep IMAGE_DISTORT available. OBJECT_ROTATE
-  works with a pointer or the keyboard, but needs sight.
+  works with a pointer or the keyboard, but needs sight. An AUTO_CHECK challenge has no image (`image()` is empty,
+  `dataUrl()` is `""`) and names in `fallbackType()` the type to show if it does not pass (`""` when the key allows
+  none); its answer is what the browser SDK finds in the browser, so it is not answered from Java.
 
 ## Errors
 

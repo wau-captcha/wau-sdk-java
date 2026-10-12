@@ -11,10 +11,11 @@ import java.util.Objects;
  * @param type          the challenge type
  * @param image         the media: a PNG for image_distort, an animated GIF for motion_noise and for
  *                      round 1 of animal_jump, the background JPEG for slide_puzzle, and for
- *                      object_rotate the JPEG strip of round 1
- * @param mimeType      {@code image/png}, {@code image/gif} or {@code image/jpeg}
- * @param width         width to display the image at, in CSS pixels; for object_rotate, of one frame
- * @param height        height to display the image at, in CSS pixels
+ *                      object_rotate the JPEG strip of round 1; empty for auto_check, which has none
+ * @param mimeType      {@code image/png}, {@code image/gif} or {@code image/jpeg}; empty for auto_check
+ * @param width         width to display the image at, in CSS pixels; for object_rotate, of one frame;
+ *                      0 for auto_check
+ * @param height        height to display the image at, in CSS pixels; 0 for auto_check
  * @param expiresAt     after this the challenge can no longer be answered
  * @param piece         slide_puzzle only: the piece to drag over the image; {@code null} for the
  *                      other types
@@ -27,16 +28,19 @@ import java.util.Objects;
  * @param frameCount    object_rotate only: {@code image} and {@code secondImage} are each this many
  *                      frames of width × height side by side, frame k the object turned k steps
  *                      clockwise as seen from above; {@code null} for the other types
+ * @param fallbackType  auto_check only: the API name of the type to show when the check does not
+ *                      let the visitor through, chosen by the service from what the key allows;
+ *                      empty when it allows none; {@code null} for the other types
  */
 public record Challenge(String id, ChallengeType type, byte[] image, String mimeType, int width, int height, Instant expiresAt,
-        Piece piece, byte[] secondImage, byte[] powSalt, int powDifficulty, Integer frameCount) {
+        Piece piece, byte[] secondImage, byte[] powSalt, int powDifficulty, Integer frameCount, String fallbackType) {
 
     /**
      * Copies the byte arrays, so the challenge cannot change under its holder.
      *
      * @param id            the challenge's id
      * @param type          the challenge type
-     * @param image         the media
+     * @param image         the media; empty for auto_check
      * @param mimeType      the media type of {@code image}
      * @param width         width to display the image at, in CSS pixels
      * @param height        height to display the image at, in CSS pixels
@@ -46,6 +50,8 @@ public record Challenge(String id, ChallengeType type, byte[] image, String mime
      * @param powSalt       the proof of work's salt; {@code null} when none is asked for
      * @param powDifficulty the zero bits the proof of work needs; 0 when none is asked for
      * @param frameCount    object_rotate only: the frames in each strip; {@code null} for the other types
+     * @param fallbackType  auto_check only: the type to show if the check does not pass; {@code null}
+     *                      for the other types
      */
     public Challenge {
         Objects.requireNonNull(id, "id");
@@ -56,7 +62,7 @@ public record Challenge(String id, ChallengeType type, byte[] image, String mime
     }
 
     /**
-     * A challenge without strips of frames, as 1.0.0 made them.
+     * A challenge without strips of frames or a fallback, as 1.0.0 made them.
      *
      * @param id            the challenge's id
      * @param type          the challenge type
@@ -72,7 +78,7 @@ public record Challenge(String id, ChallengeType type, byte[] image, String mime
      */
     public Challenge(String id, ChallengeType type, byte[] image, String mimeType, int width, int height, Instant expiresAt,
             Piece piece, byte[] secondImage, byte[] powSalt, int powDifficulty) {
-        this(id, type, image, mimeType, width, height, expiresAt, piece, secondImage, powSalt, powDifficulty, null);
+        this(id, type, image, mimeType, width, height, expiresAt, piece, secondImage, powSalt, powDifficulty, null, null);
     }
 
     /**
@@ -108,9 +114,12 @@ public record Challenge(String id, ChallengeType type, byte[] image, String mime
     /**
      * The media as a {@code data:} URL, ready for an HTML {@code <img src>}.
      *
-     * @return the data URL of {@code image}
+     * @return the data URL of {@code image}; empty for auto_check, which has no image
      */
     public String dataUrl() {
+        if (image.length == 0) {
+            return "";
+        }
         return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(image);
     }
 

@@ -125,9 +125,30 @@ public final class WauCaptchaClient {
      * @throws IllegalStateException when the client has no site key
      */
     public Challenge newChallenge(ChallengeType type) {
+        return newChallenge(type, null);
+    }
+
+    /**
+     * Fetches a new challenge, naming for {@link ChallengeType#AUTO_CHECK} the type the site prefers
+     * to show when the check does not let the visitor through; the service may pick another the key
+     * allows, and names it in {@link Challenge#fallbackType()}. For the other types
+     * {@code fallbackType} is not sent. auto_check answers with what the browser SDK finds in the
+     * browser, so from Java it serves tests rather than visitors.
+     *
+     * @param type         the type to ask for
+     * @param fallbackType auto_check only: the type to fall back to; {@code null} leaves it to the service
+     * @return the challenge
+     * @throws IllegalStateException when the client has no site key
+     */
+    public Challenge newChallenge(ChallengeType type, ChallengeType fallbackType) {
         Objects.requireNonNull(type, "type");
         String key = requireSiteKey("newChallenge");
-        HttpRequest request = request("/challenge/new?site_key=" + encode(key) + "&challenge_type=" + encode(type.wireName()))
+        String query = "site_key=" + encode(key) + "&challenge_type=" + encode(type.wireName());
+        // Only auto_check falls back, so the requests of the other types stay as they were.
+        if (type == ChallengeType.AUTO_CHECK && fallbackType != null) {
+            query += "&fallback_type=" + encode(fallbackType.wireName());
+        }
+        HttpRequest request = request("/challenge/new?" + query)
                 .GET()
                 .build();
         Map<String, Object> reply = send(request);
@@ -144,19 +165,23 @@ public final class WauCaptchaClient {
             powSalt = null;
             powDifficulty = 0;
         }
+        // auto_check has no media: its image, media type and size may be empty or left out.
+        boolean media = repliedType != ChallengeType.AUTO_CHECK;
+        byte[] image = media ? bytesField(reply, "image") : optionalBytes(reply, "image");
         return new Challenge(
                 stringField(reply, "challenge_id"),
                 repliedType,
-                bytesField(reply, "image"),
-                stringField(reply, "mime_type"),
-                intField(reply, "width"),
-                intField(reply, "height"),
+                image == null ? new byte[0] : image,
+                media ? stringField(reply, "mime_type") : optionalString(reply, "mime_type"),
+                media ? intField(reply, "width") : optionalInt(reply, "width"),
+                media ? intField(reply, "height") : optionalInt(reply, "height"),
                 Instant.now().plusSeconds(intField(reply, "expires_in")),
                 piece,
                 optionalBytes(reply, "second_image"),
                 powSalt,
                 powDifficulty,
-                reply.get("frame_count") instanceof Number frames && frames.intValue() > 0 ? frames.intValue() : null);
+                reply.get("frame_count") instanceof Number frames && frames.intValue() > 0 ? frames.intValue() : null,
+                reply.get("fallback_type") instanceof String fallback ? fallback : null);
     }
 
     /**
@@ -442,6 +467,11 @@ public final class WauCaptchaClient {
     /** A number the reply may leave out; 0 then. */
     private static int optionalInt(Map<String, Object> reply, String name) {
         return reply.get(name) instanceof Number value ? value.intValue() : 0;
+    }
+
+    /** A text the reply may leave out; empty then. */
+    private static String optionalString(Map<String, Object> reply, String name) {
+        return reply.get(name) instanceof String value ? value : "";
     }
 
     private static byte[] bytesField(Map<String, Object> reply, String name) {
