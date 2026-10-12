@@ -8,7 +8,10 @@ import java.time.Instant;
  *
  * @param success       whether the token proves a solved challenge for this key
  * @param challengeType the API name of the type of the solved challenge, e.g. {@code animal_jump};
- *                      {@link ChallengeType#fromWireName(String)} turns it into the enum
+ *                      {@link ChallengeType#fromWireName(String)} turns it into the enum.
+ *                      {@code auto_check} means the visitor passed without a puzzle; for
+ *                      sign-ups, logins and payments, require a {@link BehaviorResult#score()} at
+ *                      or above a threshold of your own
  * @param solvedAt      when the challenge was solved
  * @param behavior      how the person behaved, as the service judged it: refuse
  *                      {@link BehaviorVerdict#NOT_MEASURED}, decide about

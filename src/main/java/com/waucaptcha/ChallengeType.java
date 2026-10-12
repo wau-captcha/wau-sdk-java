@@ -5,8 +5,10 @@ import java.util.Optional;
 /**
  * Kinds of challenge, by their API names. The plan of an API key decides which ones it may
  * request. {@link #SLIDE_PUZZLE} and {@link #ANIMAL_JUMP} need a pointer, so keyboard-only users
- * cannot solve them; {@link #OBJECT_ROTATE} works with a pointer or the keyboard, but needs sight.
- * Where accessibility matters, keep {@link #IMAGE_DISTORT} available as well.
+ * cannot solve them; {@link #OBJECT_ROTATE} works with a pointer or the keyboard, but needs sight;
+ * {@link #AUTO_CHECK} asks most visitors for nothing and shows the rest a challenge of its fallback
+ * type, so it is as accessible as the fallback. Where accessibility matters, keep
+ * {@link #IMAGE_DISTORT} available as well.
  */
 public enum ChallengeType {
     /** Distorted text in a PNG image. */
@@ -25,7 +27,15 @@ public enum ChallengeType {
      * it a frame at a time until it faces the arrow, then presses Done. It works with a pointer or
      * the keyboard, but needs sight.
      */
-    OBJECT_ROTATE("object_rotate");
+    OBJECT_ROTATE("object_rotate"),
+    /**
+     * No puzzle for most visitors: the browser SDK checks the browser and the behaviour in it, and
+     * shows a challenge of its fallback type only to those the service is unsure of. The check
+     * needs a browser, so a Java backend meets this type only as the challenge type of
+     * {@link WauCaptchaClient#verifyToken(String)}: a visitor who passed without a puzzle. One who
+     * solved the fallback has a token of the fallback's type.
+     */
+    AUTO_CHECK("auto_check");
 
     private final String wireName;
 

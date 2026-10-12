@@ -141,6 +141,70 @@ class NewChallengeTest {
     }
 
     @Test
+    void autoCheckHasNoImageAndNamesItsFallback() {
+        // As the service sends it: the media fields empty, a harder proof of work, the fallback it chose.
+        service.reply("/challenge/new", 200, "{\"challenge_id\":\"" + ID + "\",\"challenge_type\":\"auto_check\",\"image\":\"\","
+                + "\"expires_in\":120,\"mime_type\":\"\",\"width\":0,\"height\":0,\"pow_salt\":\"" + Base64.getEncoder().encodeToString(SALT)
+                + "\",\"pow_difficulty\":18,\"fallback_type\":\"image_distort\"}");
+
+        Challenge challenge = client().newChallenge(ChallengeType.AUTO_CHECK, ChallengeType.SLIDE_PUZZLE);
+
+        assertEquals("site_key=" + SITE_KEY + "&challenge_type=auto_check&fallback_type=slide_puzzle", service.last().query());
+        assertEquals(ChallengeType.AUTO_CHECK, challenge.type());
+        assertEquals("image_distort", challenge.fallbackType(), "the service picked another the key allows");
+        assertArrayEquals(new byte[0], challenge.image());
+        assertEquals("", challenge.mimeType());
+        assertEquals(0, challenge.width());
+        assertEquals(0, challenge.height());
+        assertEquals("", challenge.dataUrl(), "no broken data: URL");
+        assertEquals(18, challenge.powDifficulty());
+        assertArrayEquals(SALT, challenge.powSalt());
+        assertNull(challenge.piece());
+        assertNull(challenge.secondImage());
+        assertNull(challenge.frameCount());
+    }
+
+    @Test
+    void autoCheckWithItsMediaFieldsLeftOutAndNothingToFallBackTo() {
+        service.reply("/challenge/new", 200, "{\"challenge_id\":\"" + ID + "\",\"challenge_type\":\"auto_check\",\"expires_in\":120,"
+                + "\"fallback_type\":\"\"}");
+
+        Challenge challenge = client().newChallenge(ChallengeType.AUTO_CHECK);
+
+        assertEquals("site_key=" + SITE_KEY + "&challenge_type=auto_check", service.last().query());
+        assertEquals("", challenge.fallbackType(), "the key allows no interactive type");
+        assertArrayEquals(new byte[0], challenge.image());
+        assertEquals("", challenge.mimeType());
+        assertEquals(0, challenge.powDifficulty());
+    }
+
+    @Test
+    void fallbackTypeIsSentForAutoCheckOnly() {
+        replyChallenge("image_distort", "image/png", 200, 70, "");
+        WauCaptchaClient client = client();
+
+        Challenge challenge = client.newChallenge(ChallengeType.IMAGE_DISTORT, ChallengeType.SLIDE_PUZZLE);
+        assertEquals("site_key=" + SITE_KEY + "&challenge_type=image_distort", service.last().query());
+        assertNull(challenge.fallbackType(), "fallback_type is auto_check's alone");
+
+        client.newChallenge(ChallengeType.AUTO_CHECK, null);
+        assertEquals("site_key=" + SITE_KEY + "&challenge_type=auto_check", service.last().query());
+
+        WauCaptchaClient auto = WauCaptchaClient.builder().baseUrl(service.baseUrl()).siteKey(SITE_KEY).challengeType(ChallengeType.AUTO_CHECK).build();
+        auto.newChallenge();
+        assertEquals("site_key=" + SITE_KEY + "&challenge_type=auto_check", service.last().query());
+    }
+
+    @Test
+    void theOtherTypesStillNeedTheirMedia() {
+        service.reply("/challenge/new", 200, "{\"challenge_id\":\"" + ID + "\",\"challenge_type\":\"image_distort\",\"expires_in\":120}");
+
+        WauCaptchaException error = assertThrows(WauCaptchaException.class, () -> client().newChallenge(ChallengeType.IMAGE_DISTORT));
+
+        assertEquals(ErrorCode.INVALID_RESPONSE, error.getCode());
+    }
+
+    @Test
     void theBuilderSetsTheDefaultType() {
         replyChallenge("animal_jump", "image/gif", 300, 150, ",\"second_image\":\"" + base64("round-2") + "\"");
         WauCaptchaClient client = WauCaptchaClient.builder().baseUrl(service.baseUrl()).siteKey(SITE_KEY)
