@@ -155,7 +155,8 @@ public final class WauCaptchaClient {
                 piece,
                 optionalBytes(reply, "second_image"),
                 powSalt,
-                powDifficulty);
+                powDifficulty,
+                reply.get("frame_count") instanceof Number frames && frames.intValue() > 0 ? frames.intValue() : null);
     }
 
     /**
@@ -261,6 +262,46 @@ public final class WauCaptchaClient {
                     .append(",\"y\":").append(Json.number(round1(click.y())))
                     .append(",\"ms\":").append(Json.number(round1(click.ms())))
                     .append(",\"p\":").append(click.replays()).append('}');
+        }
+        return verifyAnswer(challenge, answer.append("]}").toString(), behavior);
+    }
+
+    /**
+     * Submits the presses of an object_rotate challenge, without behaviour data; see
+     * {@link #verifyRotate(Challenge, List, Behavior)}.
+     *
+     * @param challenge the object_rotate challenge
+     * @param rounds    the presses of each round, in order
+     * @return the outcome, with the token of a right answer
+     */
+    public AnswerResult verifyRotate(Challenge challenge, List<RotateRound> rounds) {
+        return verifyRotate(challenge, rounds, null);
+    }
+
+    /**
+     * Submits the presses of an object_rotate challenge, one round each in order:
+     * {@link #verifyAnswer(Challenge, String, Behavior)} with the rounds written as the JSON the
+     * service reads, like the browser SDK, {@code {"r": [{"f": .., "s": [[ms, d], ...], "done": ..}, ...]}}.
+     * Both rounds must end on the frame that faces the arrow.
+     *
+     * @param challenge the object_rotate challenge
+     * @param rounds    the presses of each round, in order
+     * @param behavior  how the person behaved while the challenge was on screen; {@code null} for none
+     * @return the outcome, with the token of a right answer
+     * @throws IllegalStateException when the client has no site key
+     */
+    public AnswerResult verifyRotate(Challenge challenge, List<RotateRound> rounds, Behavior behavior) {
+        Objects.requireNonNull(rounds, "rounds");
+        StringBuilder answer = new StringBuilder("{\"r\":[");
+        for (int i = 0; i < rounds.size(); i++) {
+            RotateRound round = rounds.get(i);
+            answer.append(i == 0 ? "" : ",").append("{\"f\":").append(round.frame()).append(",\"s\":[");
+            List<RotatePress> presses = round.presses();
+            for (int j = 0; j < presses.size(); j++) {
+                RotatePress press = presses.get(j);
+                answer.append(j == 0 ? "[" : ",[").append(press.ms()).append(',').append(press.direction()).append(']');
+            }
+            answer.append("],\"done\":").append(round.doneMs()).append('}');
         }
         return verifyAnswer(challenge, answer.append("]}").toString(), behavior);
     }

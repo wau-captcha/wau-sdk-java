@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -140,6 +141,40 @@ class VerifyAnswerTest {
         assertEquals("1233", body.get("pow_nonce"));
         assertTrue(body.get("behavior") instanceof Map<?, ?>);
         assertTrue(result.success());
+    }
+
+    @Test
+    void verifyRotateWritesThePressesAsTheJavaScriptSdkDoes() {
+        // The same rounds as the test of verifyRotate in @wau-captcha/client, and the same JSON.
+        List<RotateRound> rounds = List.of(
+                new RotateRound(3, List.of(new RotatePress(812, 1), new RotatePress(1240, 1), new RotatePress(1531, 1)), 2100),
+                new RotateRound(6, List.of(new RotatePress(600, -1), new RotatePress(900, -1)), 1300));
+        Challenge challenge = new Challenge(ID, ChallengeType.OBJECT_ROTATE, new byte[] {1}, "image/jpeg", 300, 150,
+                Instant.now().plusSeconds(120), null, new byte[] {2}, SALT, 12, 8);
+
+        AnswerResult result = client().verifyRotate(challenge, rounds);
+
+        Map<String, Object> body = sent();
+        assertEquals("{\"r\":[{\"f\":3,\"s\":[[812,1],[1240,1],[1531,1]],\"done\":2100},{\"f\":6,\"s\":[[600,-1],[900,-1]],\"done\":1300}]}",
+                body.get("answer"));
+        assertEquals("1233", body.get("pow_nonce"));
+        assertFalse(body.containsKey("behavior"));
+        assertTrue(result.success());
+
+        Behavior behavior = new Behavior(Behavior.VERSION, 5200, List.of(), "", List.of(410, 380, 520), 0, 0, 0, false, 0, false, false, false);
+        client().verifyRotate(challenge, rounds, behavior);
+        assertTrue(sent().get("behavior") instanceof Map<?, ?>);
+    }
+
+    @Test
+    void aPressTurnsOneWayOrTheOther() {
+        assertThrows(IllegalArgumentException.class, () -> new RotatePress(600, 0));
+        assertThrows(IllegalArgumentException.class, () -> new RotatePress(600, 2));
+        assertThrows(NullPointerException.class, () -> new RotateRound(1, null, 900));
+        List<RotatePress> presses = new ArrayList<>(List.of(new RotatePress(600, 1)));
+        RotateRound round = new RotateRound(1, presses, 900);
+        presses.add(new RotatePress(700, 1));
+        assertEquals(1, round.presses().size(), "the round keeps its own copy");
     }
 
     @Test

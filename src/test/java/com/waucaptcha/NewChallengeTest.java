@@ -121,6 +121,23 @@ class NewChallengeTest {
         assertEquals(150, challenge.height());
         assertNull(challenge.piece());
         assertEquals(15, challenge.powDifficulty());
+        assertNull(challenge.frameCount(), "frame_count is object_rotate's alone");
+    }
+
+    @Test
+    void objectRotateCarriesBothStripsAndTheFrameCount() {
+        replyChallenge("object_rotate", "image/jpeg", 300, 150, ",\"second_image\":\"" + base64("strip-2") + "\",\"frame_count\":8");
+
+        Challenge challenge = client().newChallenge(ChallengeType.OBJECT_ROTATE);
+
+        assertEquals("site_key=" + SITE_KEY + "&challenge_type=object_rotate", service.last().query());
+        assertEquals(ChallengeType.OBJECT_ROTATE, challenge.type());
+        assertArrayEquals("object_rotate-image".getBytes(StandardCharsets.UTF_8), challenge.image(), "image is round 1");
+        assertArrayEquals("strip-2".getBytes(StandardCharsets.UTF_8), challenge.secondImage());
+        assertEquals(8, challenge.frameCount());
+        assertEquals("image/jpeg", challenge.mimeType());
+        assertEquals(300, challenge.width(), "the width of one frame");
+        assertNull(challenge.piece());
     }
 
     @Test

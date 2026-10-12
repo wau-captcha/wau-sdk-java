@@ -5,7 +5,8 @@ import java.util.Optional;
 /**
  * Kinds of challenge, by their API names. The plan of an API key decides which ones it may
  * request. {@link #SLIDE_PUZZLE} and {@link #ANIMAL_JUMP} need a pointer, so keyboard-only users
- * cannot solve them: where accessibility matters, keep {@link #IMAGE_DISTORT} available as well.
+ * cannot solve them; {@link #OBJECT_ROTATE} works with a pointer or the keyboard, but needs sight.
+ * Where accessibility matters, keep {@link #IMAGE_DISTORT} available as well.
  */
 public enum ChallengeType {
     /** Distorted text in a PNG image. */
@@ -18,7 +19,13 @@ public enum ChallengeType {
      * Two rounds of 2 s in which five animal heads jump; in each, the person clicks the one that
      * jumps highest.
      */
-    ANIMAL_JUMP("animal_jump");
+    ANIMAL_JUMP("animal_jump"),
+    /**
+     * Two rounds in which an object stands beside an arrow on the ground; in each, the person turns
+     * it a frame at a time until it faces the arrow, then presses Done. It works with a pointer or
+     * the keyboard, but needs sight.
+     */
+    OBJECT_ROTATE("object_rotate");
 
     private final String wireName;
 

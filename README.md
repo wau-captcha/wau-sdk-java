@@ -11,14 +11,14 @@ Maven:
 <dependency>
     <groupId>com.waucaptcha</groupId>
     <artifactId>wau-captcha-sdk</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 Gradle:
 
 ```kotlin
-implementation("com.waucaptcha:wau-captcha-sdk:1.0.0")
+implementation("com.waucaptcha:wau-captcha-sdk:1.1.0")
 ```
 
 ## Verify a token on your server
@@ -129,6 +129,14 @@ AnswerResult dragged = captcha.verifySlide(slide, new SlideDrag(x, trail), behav
 Challenge jump = captcha.newChallenge(ChallengeType.ANIMAL_JUMP);
 AnswerResult clicked = captcha.verifyJump(jump, List.of(round1, round2), behavior);
 
+// object_rotate: show frame 0 of turn.image() (round 1), then of turn.secondImage() (round 2); each strip is
+// turn.frameCount() frames of width × height side by side. Rotate right shows the next frame, Rotate left the one
+// before; Done ends the round on the frame on screen.
+Challenge turn = captcha.newChallenge(ChallengeType.OBJECT_ROTATE);
+AnswerResult turned = captcha.verifyRotate(turn, List.of(
+        new RotateRound(3, List.of(new RotatePress(812, 1), new RotatePress(1240, 1), new RotatePress(1531, 1)), 2100),
+        new RotateRound(6, List.of(new RotatePress(600, -1), new RotatePress(900, -1)), 1300)), behavior);
+
 if (clicked.success()) {
     sendToBackend(clicked.token()); // the backend redeems it with verifyToken
 } else {
@@ -147,10 +155,15 @@ if (clicked.success()) {
   vertical offset)`, in CSS pixels of the image. `JumpClick` is where the click landed in CSS pixels of the
   300 × 150 image, the ms since the playback of that round started (a replay restarts the count) and the replays
   used in the round, up to 3. A click less than 150 ms after the apex of the high jump, or an answer sent sooner
-  after the challenge was issued than both high jumps can be watched, fails the challenge. The answers go out as the
-  same JSON as the browser SDK's.
+  after the challenge was issued than both high jumps can be watched, fails the challenge. A `RotateRound` is the
+  frame on screen when Done was pressed (from 0), every `RotatePress` (whole ms since the round was shown, and 1 for
+  Rotate right, the object turning clockwise as seen from above, or -1 for Rotate left) and when Done was pressed.
+  The service takes 1 to 24 presses a round, the first at least 250 ms in and the rest at least 60 ms apart, which
+  must lead to the frame sent; both rounds must end facing the arrow. The answers go out as the same JSON as the
+  browser SDK's.
 - `newChallenge()` asks for the type set with `Builder.challengeType`, `IMAGE_DISTORT` by default. SLIDE_PUZZLE and
-  ANIMAL_JUMP need a pointer: where keyboard-only users must get through, keep IMAGE_DISTORT available.
+  ANIMAL_JUMP need a pointer: where keyboard-only users must get through, keep IMAGE_DISTORT available. OBJECT_ROTATE
+  works with a pointer or the keyboard, but needs sight.
 
 ## Errors
 
@@ -180,7 +193,7 @@ through; compare it with the `ErrorCode` constants:
 ## Build
 
 ```bash
-./mvnw verify    # compiles, runs the tests, target/wau-captcha-sdk-1.0.0.jar
+./mvnw verify    # compiles, runs the tests, target/wau-captcha-sdk-1.1.0.jar
 ```
 
 JDK 17 or later; CI runs it on Java 17 and 21. `./mvnw -P release -Dgpg.skip package` also builds the sources and
