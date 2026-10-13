@@ -53,8 +53,8 @@ try {
 }
 ```
 
-A successful result carries `challengeType()` (`"animal_jump"`; `ChallengeType.fromWireName` turns it into the
-enum), `solvedAt()`, `behavior()` (`verdict()`, `score()`, `reasons()`) and `hostname()`. The token travels in the
+A successful result carries `challengeType()` (`"animal_jump"`; `ChallengeType.fromWireName` turns it into an
+`Optional<ChallengeType>`, empty for a type newer than the SDK), `solvedAt()`, `behavior()` (`verdict()`, `score()`, `reasons()`) and `hostname()`. The token travels in the
 JSON body of `POST /siteverify` with `Authorization: Bearer <secret key>`, never in the URL. The base URL must be
 https; plain http is accepted for `localhost`, `127.0.0.1` and `[::1]` only.
 
@@ -117,10 +117,21 @@ the tokens it earns have an empty `hostname`.
 With the public **site key** (`pk_…`):
 
 ```java
+import com.waucaptcha.AnswerResult;
+import com.waucaptcha.Challenge;
+import com.waucaptcha.ChallengeType;
+import com.waucaptcha.RotatePress;
+import com.waucaptcha.RotateRound;
+import com.waucaptcha.SlideDrag;
+import com.waucaptcha.WauCaptchaClient;
+import java.util.List;
+
 WauCaptchaClient captcha = WauCaptchaClient.builder()
         .baseUrl("https://api.waucaptcha.com")
         .siteKey("pk_…")
         .build();
+
+// behavior is a com.waucaptcha.Behavior recorded from real input; round1 and round2 are JumpClick values.
 
 // image_distort (a PNG) and motion_noise (an animated GIF): the text in the image.
 Challenge text = captcha.newChallenge(ChallengeType.IMAGE_DISTORT);
@@ -199,44 +210,46 @@ through; compare it with the `ErrorCode` constants:
 }
 ```
 
-## Build
+## Development
+
+JDK 17 or later (`maven.compiler.release` 17); CI (`.github/workflows/ci.yml`) runs `./mvnw -B verify` on Java 17
+and 21 on every push and pull request. The Maven wrapper is committed without its executable bit, so on Linux or
+macOS run `chmod +x mvnw` once; on Windows use `mvnw.cmd`.
 
 ```bash
-./mvnw verify    # compiles, runs the tests, target/wau-captcha-sdk-1.1.0.jar
+./mvnw verify    # compiles, runs the JUnit tests in src/test, builds target/wau-captcha-sdk-1.1.0.jar
 ```
 
-JDK 17 or later; CI runs it on Java 17 and 21. `./mvnw -P release -Dgpg.skip package` also builds the sources and
-javadoc jars that Maven Central requires, without signing them.
+`./mvnw -P release package` also builds the sources and javadoc jars that Maven Central requires, without
+signing them: signing runs in the `verify` phase.
 
-## Publish to Maven Central
+### Release
 
-1. Create an account on [central.sonatype.com](https://central.sonatype.com) and add the namespace `com.waucaptcha`.
-   The portal proves it through a DNS TXT record on the domain `waucaptcha.com`: add the record it shows, then
-   verify the namespace.
-2. Generate a user token there and put it in `~/.m2/settings.xml`:
+1. Set the new `<version>` in `pom.xml`, and the version in the install snippets above.
+2. Deploy:
+
+   ```bash
+   ./mvnw -B -P release deploy
+   ```
+
+   The `release` profile in `pom.xml` attaches the sources and javadoc jars (`maven-source-plugin`,
+   `maven-javadoc-plugin`), signs every artifact with `maven-gpg-plugin`, and uploads them with
+   `central-publishing-maven-plugin` to the server id `central`. So it needs a GPG key that can sign, and Central
+   Portal credentials for that server id in your Maven `settings.xml`:
 
    ```xml
    <settings>
      <servers>
        <server>
          <id>central</id>
-         <username>TOKEN_USERNAME</username>
-         <password>TOKEN_PASSWORD</password>
+         <username>your-username</username>
+         <password>your-password</password>
        </server>
      </servers>
    </settings>
    ```
 
-3. Create a GPG key and publish it to a key server: `gpg --gen-key`, then
-   `gpg --keyserver keyserver.ubuntu.com --send-keys <KEY_ID>`.
-4. Release:
-
-   ```bash
-   ./mvnw -P release deploy
-   ```
-
-   It builds and signs the jar, the sources and the javadoc and uploads them to the Central Portal; the deployment
-   then shows up on central.sonatype.com, where you publish it.
+A version published to Maven Central can never be changed or removed: a broken release needs a new version number.
 
 ## License
 
