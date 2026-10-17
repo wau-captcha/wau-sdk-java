@@ -1,7 +1,10 @@
 # WAU Captcha SDK for Java
 
-`com.waucaptcha:wau-captcha-sdk` — redeem WAU Captcha tokens on your server, as `@wau-captcha/server` does, and
-fetch and answer challenges, as `@wau-captcha/client` does without its widget. Java 17 or later, no dependencies.
+`com.waucaptcha:waucaptcha-sdk` — redeem WAU Captcha tokens on your server, as `@waucaptcha-sdk/server` does, and
+fetch and answer challenges, as `@waucaptcha-sdk/client` does without its widget. Java 17 or later, no dependencies.
+
+Earlier releases were published as `com.waucaptcha:wau-captcha-sdk` (1.0.0). That artifact stays on
+Maven Central but gets no further releases; from 1.1.0 on, depend on `com.waucaptcha:waucaptcha-sdk`.
 
 ## Install
 
@@ -10,7 +13,7 @@ Maven:
 ```xml
 <dependency>
     <groupId>com.waucaptcha</groupId>
-    <artifactId>wau-captcha-sdk</artifactId>
+    <artifactId>waucaptcha-sdk</artifactId>
     <version>1.1.0</version>
 </dependency>
 ```
@@ -18,12 +21,12 @@ Maven:
 Gradle:
 
 ```kotlin
-implementation("com.waucaptcha:wau-captcha-sdk:1.1.0")
+implementation("com.waucaptcha:waucaptcha-sdk:1.1.0")
 ```
 
 ## Verify a token on your server
 
-On a website, the JavaScript widget (`@wau-captcha/client` or `@wau-captcha/react`) shows the challenge and puts a
+On a website, the JavaScript widget (`@waucaptcha-sdk/client` or `@waucaptcha-sdk/react`) shows the challenge and puts a
 one-time token in the form field `wau-captcha-token`. Redeem it with the **secret key** (`sk_…`):
 
 ```java
@@ -217,7 +220,7 @@ and 21 on every push and pull request. The Maven wrapper is committed without it
 macOS run `chmod +x mvnw` once; on Windows use `mvnw.cmd`.
 
 ```bash
-./mvnw verify    # compiles, runs the JUnit tests in src/test, builds target/wau-captcha-sdk-1.1.0.jar
+./mvnw verify    # compiles, runs the JUnit tests in src/test, builds target/waucaptcha-sdk-1.1.0.jar
 ```
 
 `./mvnw -P release package` also builds the sources and javadoc jars that Maven Central requires, without
