@@ -23,8 +23,8 @@ import java.util.Set;
 
 /**
  * Client for the WAU Captcha API. A site backend redeems tokens with {@link #verifyToken(String)}
- * and the secret key, as {@code @wau-captcha/server} does. The challenge calls use the public site
- * key and are those of {@code @wau-captcha/client} without its widget: keys that require behaviour
+ * and the secret key, as {@code @waucaptcha-sdk/server} does. The challenge calls use the public site
+ * key and are those of {@code @waucaptcha-sdk/client} without its widget: keys that require behaviour
  * data, the default for new keys, refuse answers sent without a {@link Behavior}, so they suit
  * tests and desktop apps. On a website, show the JavaScript widget and verify its token here.
  *

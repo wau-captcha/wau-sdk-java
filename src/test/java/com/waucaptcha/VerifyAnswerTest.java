@@ -130,7 +130,7 @@ class VerifyAnswerTest {
 
     @Test
     void verifyJumpWritesTheClicksAsTheJavaScriptSdkDoes() {
-        // The same clicks as the test of verifyJump in @wau-captcha/client, and the same JSON.
+        // The same clicks as the test of verifyJump in @waucaptcha-sdk/client, and the same JSON.
         List<JumpClick> clicks = List.of(new JumpClick(31.2345, 100.06, 1712.449, 0), new JumpClick(280, 99.94, 2200.05, 2));
         Behavior behavior = new Behavior(Behavior.VERSION, 5000, List.of(), "mouse", List.of(), 0, 0, 0, false, 0, false, false, false);
 
@@ -145,7 +145,7 @@ class VerifyAnswerTest {
 
     @Test
     void verifyRotateWritesThePressesAsTheJavaScriptSdkDoes() {
-        // The same rounds as the test of verifyRotate in @wau-captcha/client, and the same JSON.
+        // The same rounds as the test of verifyRotate in @waucaptcha-sdk/client, and the same JSON.
         List<RotateRound> rounds = List.of(
                 new RotateRound(3, List.of(new RotatePress(812, 1), new RotatePress(1240, 1), new RotatePress(1531, 1)), 2100),
                 new RotateRound(6, List.of(new RotatePress(600, -1), new RotatePress(900, -1)), 1300));
