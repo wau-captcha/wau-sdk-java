@@ -23,8 +23,8 @@ public enum ChallengeType {
      */
     ANIMAL_JUMP("animal_jump"),
     /**
-     * Two rounds in which an object stands beside an arrow on the ground; in each, the person turns
-     * it a frame at a time until it faces the arrow, then presses Done. It works with a pointer or
+     * Two rounds in which an arrow on the ground and an object stand in two panels; in each, the person turns
+     * the object a frame at a time until it faces the way the arrow points, then presses Done. It works with a pointer or
      * the keyboard, but needs sight.
      */
     OBJECT_ROTATE("object_rotate"),
