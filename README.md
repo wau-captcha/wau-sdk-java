@@ -42,8 +42,9 @@ WauCaptchaClient wau = WauCaptchaClient.builder()
 
 try {
     SiteVerifyResult result = wau.verifyToken(request.getParameter("wau-captcha-token"));
-    // hostname is the website the captcha was solved on: it must be yours.
-    if (!result.success() || !result.hostname().equals("shop.example.com")) {
+    // hostname is the website the captcha was solved on: it must be one of yours, listed in
+    // WAU_ALLOWED_HOSTNAMES, e.g. shop.example.com,https://www.shop.example.com
+    if (!result.hostnameMatches(System.getenv("WAU_ALLOWED_HOSTNAMES"))) {
         // unknown, expired, already used, issued for another key, or solved on another website
     }
     // Sign-up accepts human only: suspicious is a scripted session, and not_measured means the
@@ -57,7 +58,11 @@ try {
 ```
 
 A successful result carries `challengeType()` (`"animal_jump"`; `ChallengeType.fromWireName` turns it into an
-`Optional<ChallengeType>`, empty for a type newer than the SDK), `solvedAt()`, `behavior()` (`verdict()`, `score()`, `reasons()`) and `hostname()`. The token travels in the
+`Optional<ChallengeType>`, empty for a type newer than the SDK), `solvedAt()`, `behavior()` (`verdict()`, `score()`, `reasons()`) and `hostname()`.
+`hostnameMatches(...)` is true when the token succeeded on one of your websites. It takes one website per argument,
+or several in one string with commas or white space between them, such as an environment variable, and reduces
+each to its host name: `https://Shop.example.com/`, `shop.example.com:443` and `shop.example.com` are the same, and
+`*.example.com` stands for every subdomain of example.com but not example.com itself. The token travels in the
 JSON body of `POST /siteverify` with `Authorization: Bearer <secret key>`, never in the URL. The base URL must be
 https; plain http is accepted for `localhost`, `127.0.0.1` and `[::1]` only.
 
@@ -84,9 +89,11 @@ class CaptchaConfig {
 @RestController
 class SignupController {
     private final WauCaptchaClient wauCaptcha;
+    private final String allowedHostnames;
 
-    SignupController(WauCaptchaClient wauCaptcha) {
+    SignupController(WauCaptchaClient wauCaptcha, @Value("${wau.allowed-hostnames}") String allowedHostnames) {
         this.wauCaptcha = wauCaptcha;
+        this.allowedHostnames = allowedHostnames;
     }
 
     @PostMapping("/signup")
@@ -97,8 +104,7 @@ class SignupController {
         } catch (WauCaptchaException e) {
             return ResponseEntity.status(503).body("Captcha check unavailable."); // fail closed
         }
-        if (!result.success() || !"shop.example.com".equals(result.hostname())
-                || result.behavior().verdict() != BehaviorVerdict.HUMAN) {
+        if (!result.hostnameMatches(allowedHostnames) || result.behavior().verdict() != BehaviorVerdict.HUMAN) {
             return ResponseEntity.badRequest().body("Please solve the captcha.");
         }
         // … create the account
@@ -107,7 +113,8 @@ class SignupController {
 }
 ```
 
-with `wau.base-url=https://api.waucaptcha.com` and `wau.secret-key=${WAU_SECRET_KEY}` in `application.properties`.
+with `wau.base-url=https://api.waucaptcha.com`, `wau.secret-key=${WAU_SECRET_KEY}` and
+`wau.allowed-hostnames=shop.example.com,www.shop.example.com` in `application.properties`.
 
 ## Challenges from Java
 
